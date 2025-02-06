@@ -1,5 +1,5 @@
-import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
-import {useState} from "react";
+import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
+import {useEffect, useState} from "react";
 
 import Ducks from "./Ducks";
 import Login from "./Login";
@@ -8,6 +8,8 @@ import Register from "./Register";
 import ProtectedRoute from "./ProtectedRoute";
 
 import * as auth from '../utils/auth';
+import * as api from '../utils/api';
+import {setToken, getToken} from "../utils/token";
 
 import "./styles/App.css";
 
@@ -17,10 +19,26 @@ function App() {
 
   const navigate = useNavigate();
 
+  const location = useLocation();
+
+  //[] so it only runs only once, when the component loads
+  useEffect(() =>{
+    const jwt = getToken();
+    if(!jwt){return;}
+    api.getUserInfo(jwt)
+    .then(({username, email})=>{
+      setIsLoggedIn(true);
+      setUserData({username, email});
+      //navigate("/ducks");
+    })
+    .catch(console.error);
+  },[]);
+
   const handleRegistration =({username, email, password, confirmPassword})=>{
     if(password===confirmPassword){
       auth.register(username,password,email)
       .then(()=>{
+
         navigate("/login");
       })
       .catch(console.error);
@@ -35,11 +53,13 @@ function App() {
     auth.authorize(username, password)
       .then((data)=>{
         console.log(data);
-
-        setIsLoggedIn(true);
+  
         if(data.jwt){
+          setToken(data.jwt);
           setUserData(data.user);
-          navigate("/ducks");
+          setIsLoggedIn(true);
+          const redirectPath = location.state?.from || "/ducks";
+          navigate(redirectPath);
         }
       })
       .catch(console.error);
@@ -58,21 +78,25 @@ function App() {
           <MyProfile userData={userData}/>
           </ProtectedRoute>
         } />
+        
       <Route
         path="/login"
         element={
-          <div className="loginContainer">
-            <Login handleLogin={handleLogin}/>
-          </div>
+          <ProtectedRoute isLoggedIn={isLoggedIn} anonymous>
+            <div className="loginContainer">
+              <Login handleLogin={handleLogin}/>
+            </div>
+          </ProtectedRoute>
         }
       />
       <Route
         path="/register"
         element={
-          <div className="registerContainer">
-
-            <Register handleRegistration={handleRegistration} />
-          </div>
+          <ProtectedRoute isLoggedIn={isLoggedIn} anonymous>
+            <div className="registerContainer">
+              <Register handleRegistration={handleRegistration} />
+            </div>
+          </ProtectedRoute>
         }
       />
       <Route 

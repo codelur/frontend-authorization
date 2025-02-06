@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import {useState} from "react";
 
 import Ducks from "./Ducks";
@@ -7,10 +7,44 @@ import MyProfile from "./MyProfile";
 import Register from "./Register";
 import ProtectedRoute from "./ProtectedRoute";
 
+import * as auth from '../utils/auth';
+
 import "./styles/App.css";
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userData, setUserData] = useState({ username: "", email: "" });
+
+  const navigate = useNavigate();
+
+  const handleRegistration =({username, email, password, confirmPassword})=>{
+    if(password===confirmPassword){
+      auth.register(username,password,email)
+      .then(()=>{
+        navigate("/login");
+      })
+      .catch(console.error);
+    }
+  }
+
+  const handleLogin = ({ username, password}) =>{
+    if (!username || !password){
+      return;
+    }
+
+    auth.authorize(username, password)
+      .then((data)=>{
+        console.log(data);
+
+        setIsLoggedIn(true);
+        if(data.jwt){
+          setUserData(data.user);
+          navigate("/ducks");
+        }
+      })
+      .catch(console.error);
+  }
+
   return (
     <Routes>
       <Route path="/ducks" element={
@@ -21,14 +55,14 @@ function App() {
            />
       <Route path="/my-profile" element={
         <ProtectedRoute isLoggedIn={isLoggedIn}>
-          <MyProfile />
+          <MyProfile userData={userData}/>
           </ProtectedRoute>
         } />
       <Route
         path="/login"
         element={
           <div className="loginContainer">
-            <Login />
+            <Login handleLogin={handleLogin}/>
           </div>
         }
       />
@@ -36,7 +70,8 @@ function App() {
         path="/register"
         element={
           <div className="registerContainer">
-            <Register />
+
+            <Register handleRegistration={handleRegistration} />
           </div>
         }
       />

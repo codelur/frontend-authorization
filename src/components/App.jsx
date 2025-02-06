@@ -10,6 +10,7 @@ import ProtectedRoute from "./ProtectedRoute";
 import * as auth from '../utils/auth';
 import * as api from '../utils/api';
 import {setToken, getToken} from "../utils/token";
+import AppContext from "../context/AppContext";
 
 import "./styles/App.css";
 
@@ -66,23 +67,24 @@ function App() {
   }
 
   return (
+    <AppContext.Provider value = {{  isLoggedIn, setIsLoggedIn  }}>
     <Routes>
       <Route path="/ducks" element={
-        <ProtectedRoute isLoggedIn={isLoggedIn}>
-          <Ducks setIsLoggedIn={setIsLoggedIn}/>
+        <ProtectedRoute >
+          <Ducks />
           </ProtectedRoute>
           }
            />
       <Route path="/my-profile" element={
-        <ProtectedRoute isLoggedIn={isLoggedIn}>
-          <MyProfile userData={userData} setIsLoggedIn={setIsLoggedIn}/>
+        <ProtectedRoute >
+          <MyProfile userData={userData} />
           </ProtectedRoute>
         } />
         
       <Route
         path="/login"
         element={
-          <ProtectedRoute isLoggedIn={isLoggedIn} anonymous>
+          <ProtectedRoute  anonymous>
             <div className="loginContainer">
               <Login handleLogin={handleLogin}/>
             </div>
@@ -92,7 +94,7 @@ function App() {
       <Route
         path="/register"
         element={
-          <ProtectedRoute isLoggedIn={isLoggedIn} anonymous>
+          <ProtectedRoute  anonymous>
             <div className="registerContainer">
               <Register handleRegistration={handleRegistration} />
             </div>
@@ -107,6 +109,7 @@ function App() {
         }
       />
     </Routes>
+    </AppContext.Provider>
   );
 }
 
